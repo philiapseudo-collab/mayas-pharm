@@ -56,6 +56,9 @@ Staff complexity belongs in the admin dashboard:
 - `admin`
   - Runs the Next.js app in `admin/`
   - Calls the API service over HTTPS
+- `deploy/railway/`
+  - Service-by-service Railway env templates for `api`, `worker`, and `admin`
+  - Deployment notes for Postgres and Redis wiring
 
 ## Domain Model
 
@@ -169,12 +172,10 @@ This document is an implementation guide, not legal advice.
 ### Important WhatsApp constraint
 WhatsApp interactive list messages are capped at 10 options.
 
-Current implication:
-- The bot prioritizes the first 10 top-level categories in the list flow
+Implemented approach:
+- The bot uses paged category browsing so more than 10 top-level categories remain fully browseable
+- Category selection can branch into subcategory lists before showing products
 - Additional categories remain searchable by product name
-
-Recommended next improvement:
-- Add paged category browsing or grouped category hubs so all categories are browseable without relying on search
 
 ## Operational Critique
 
@@ -270,7 +271,7 @@ Recommended next improvement:
 4. Harden workers, idempotency and expiry behavior
 5. Ship admin review and operations dashboard
 6. Load test burst traffic and refine queue intervals
-7. Add category pagination, repeat orders and branch expansion
+7. Add repeat orders and branch expansion
 
 ## Definition of Done for Launch
 - Customer can place OTC order fully through WhatsApp

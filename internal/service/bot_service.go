@@ -49,6 +49,7 @@ var fixedCategoryOrder = []string{
 const (
 	StateStart                  = "START"
 	StateBrowsing               = "BROWSING"
+	StateBrowsingSubcategory    = "BROWSING_SUBCATEGORY"
 	StateSelectingProduct       = "SELECTING_PRODUCT"
 	StateResolveAmbiguous       = "RESOLVE_AMBIGUOUS"
 	StateConfirmBulkAdd         = "CONFIRM_BULK_ADD"
@@ -157,11 +158,6 @@ func buildOrderedCategories(menu map[string][]*core.Product) []string {
 
 	categories = append(categories, extraCategories...)
 
-	// Limit to 10 categories (WhatsApp list limit)
-	if len(categories) > 10 {
-		categories = categories[:10]
-	}
-
 	return categories
 }
 
@@ -228,18 +224,12 @@ func (b *BotService) sendWelcomeMenu(ctx context.Context, phone string, session 
 		return fmt.Errorf("failed to get menu: %w", err)
 	}
 
-	categories := buildOrderedCategories(menu)
-
-	if err := b.WhatsApp.SendCategoryListWithText(ctx, phone, welcomeMenuPrompt, categories); err != nil {
-		return fmt.Errorf("failed to send categories: %w", err)
-	}
-
+	session.CurrentCategoryPage = 0
 	session.CurrentCategory = ""
+	session.CurrentSubcategory = ""
 	session.CurrentProductID = ""
 	clearPendingSelectionState(session)
-	session.State = StateBrowsing
-
-	return b.Session.Set(ctx, phone, session, 7200)
+	return b.sendCategoryPage(ctx, phone, session, menu, 0, welcomeMenuPrompt)
 }
 
 func selectionInstructionsText() string {
@@ -281,7 +271,11 @@ func (b *BotService) sendCurrentSelectionList(ctx context.Context, phone string,
 		searchQuery := strings.TrimPrefix(session.CurrentCategory, "_SEARCH_")
 		productList = buildSelectionListText(fmt.Sprintf("ðŸ” Search results for '*%s*':", searchQuery), sortedProducts)
 	} else {
-		productList = buildSelectionListText(fmt.Sprintf("Products in *%s*:", session.CurrentCategory), sortedProducts)
+		title := fmt.Sprintf("Products in *%s*:", session.CurrentCategory)
+		if strings.TrimSpace(session.CurrentSubcategory) != "" {
+			title = fmt.Sprintf("Products in *%s* - *%s*:", session.CurrentCategory, session.CurrentSubcategory)
+		}
+		productList = buildSelectionListText(title, sortedProducts)
 	}
 
 	if err := b.WhatsApp.SendText(ctx, phone, productList); err != nil {
@@ -334,6 +328,8 @@ func (b *BotService) HandleIncomingMessage(phone string, message string, message
 		return b.handleMenu(ctx, phone, session, message)
 	case "BROWSING":
 		return b.handleBrowsing(ctx, phone, session, message)
+	case StateBrowsingSubcategory:
+		return b.handleBrowsingSubcategory(ctx, phone, session, message)
 	case "SELECTING_PRODUCT":
 		return b.handleSelectingProduct(ctx, phone, session, message, messageType)
 	case StateResolveAmbiguous:
@@ -475,21 +471,12 @@ func (b *BotService) handleMenu(ctx context.Context, phone string, session *core
 			return fmt.Errorf("failed to get menu: %w", err)
 		}
 
-		categories := buildOrderedCategories(menu)
-
 		errorMsg := "That menu is expired. Here is the latest one."
 		// Send error message first, then the list
 		if err := b.WhatsApp.SendText(ctx, phone, errorMsg); err != nil {
 			return fmt.Errorf("failed to send error message: %w", err)
 		}
-
-		if err := b.WhatsApp.SendCategoryList(ctx, phone, categories); err != nil {
-			return fmt.Errorf("failed to send categories: %w", err)
-		}
-
-		// Set state to BROWSING
-		session.State = "BROWSING"
-		return b.Session.Set(ctx, phone, session, 7200)
+		return b.sendCategoryPage(ctx, phone, session, menu, session.CurrentCategoryPage, "Select a category to browse:")
 	}
 
 	// Get menu (grouped by category)
@@ -498,16 +485,7 @@ func (b *BotService) handleMenu(ctx context.Context, phone string, session *core
 		return fmt.Errorf("failed to get menu: %w", err)
 	}
 
-	categories := buildOrderedCategories(menu)
-
-	// Send category list using interactive list
-	if err := b.WhatsApp.SendCategoryList(ctx, phone, categories); err != nil {
-		return fmt.Errorf("failed to send categories: %w", err)
-	}
-
-	// Set state to BROWSING
-	session.State = "BROWSING"
-	return b.Session.Set(ctx, phone, session, 7200)
+	return b.sendCategoryPage(ctx, phone, session, menu, session.CurrentCategoryPage, "Select a category to browse:")
 }
 
 // handleBrowsing handles the BROWSING state - shows products in a category
@@ -518,30 +496,11 @@ func (b *BotService) handleBrowsing(ctx context.Context, phone string, session *
 		return fmt.Errorf("failed to get menu: %w", err)
 	}
 
-	// Trust the category ID from list_reply (exact match)
-	selectedCategory := strings.TrimSpace(message)
+	return b.handleCategoryBrowseSelection(ctx, phone, session, menu, message, welcomeMenuPrompt)
+}
 
-	orderedCategories := buildOrderedCategories(menu)
-	if !isCategoryInList(orderedCategories, selectedCategory) {
-		// Invalid category - resend the category list
-		categories := orderedCategories
-
-		errorMsg := "That menu is expired. Here is the latest one."
-		// Send error message first, then the list
-		if err := b.WhatsApp.SendText(ctx, phone, errorMsg); err != nil {
-			return fmt.Errorf("failed to send error message: %w", err)
-		}
-
-		if err := b.WhatsApp.SendCategoryList(ctx, phone, categories); err != nil {
-			return fmt.Errorf("failed to send categories: %w", err)
-		}
-
-		// Keep state as BROWSING
-		return b.Session.Set(ctx, phone, session, 7200)
-	}
-
-	// Category is valid in UI order; it may still have no active products in DB.
-	return b.sendCategoryProducts(ctx, phone, session, menu, selectedCategory)
+func (b *BotService) handleBrowsingSubcategory(ctx context.Context, phone string, session *core.Session, message string) error {
+	return b.handleSubcategoryBrowseSelection(ctx, phone, session, message)
 }
 
 // handleSelectingProduct handles the SELECTING_PRODUCT state - user selects a product
@@ -633,31 +592,29 @@ func (b *BotService) tryHandleInteractiveCategorySwitch(ctx context.Context, pho
 		return true, fmt.Errorf("failed to get menu: %w", err)
 	}
 
-	selectedCategory := strings.TrimSpace(message)
-	if !isCategoryInList(buildOrderedCategories(menu), selectedCategory) {
+	selected := strings.TrimSpace(message)
+	if isCategoryPagingSelection(selected) {
+		return true, b.handleCategoryBrowseSelection(ctx, phone, session, menu, selected, "Select a category to browse:")
+	}
+	if selected == controlBackToCategories {
+		return true, b.sendCategoryPage(ctx, phone, session, menu, session.CurrentCategoryPage, "Select a category to browse:")
+	}
+	if isCategoryInList(buildOrderedCategories(menu), selected) {
+		return true, b.sendCategoryEntryPoint(ctx, phone, session, menu, selected)
+	}
+	if strings.TrimSpace(session.CurrentCategory) == "" {
 		return false, nil
 	}
-
-	return true, b.sendCategoryProducts(ctx, phone, session, menu, selectedCategory)
+	for _, group := range buildSubcategoryGroups(session.CurrentCategory, menu[session.CurrentCategory]) {
+		if strings.EqualFold(group.Label, selected) || selected == controlAllProducts {
+			return true, b.handleSubcategoryBrowseSelection(ctx, phone, session, selected)
+		}
+	}
+	return false, nil
 }
 
 func (b *BotService) sendCategoryProducts(ctx context.Context, phone string, session *core.Session, menu map[string][]*core.Product, selectedCategory string) error {
-	products := menu[selectedCategory]
-	if len(products) == 0 {
-		return b.WhatsApp.SendText(ctx, phone, "No products available in this category.")
-	}
-
-	sortedProducts := sortProductsAlphabetically(products)
-	productList := buildSelectionListText(fmt.Sprintf("Products in *%s*:", selectedCategory), sortedProducts)
-
-	if err := b.WhatsApp.SendText(ctx, phone, productList); err != nil {
-		return fmt.Errorf("failed to send products: %w", err)
-	}
-
-	session.CurrentCategory = selectedCategory
-	session.CurrentProductID = ""
-	session.State = StateSelectingProduct
-	return b.Session.Set(ctx, phone, session, 7200)
+	return b.sendFilteredCategoryProducts(ctx, phone, session, selectedCategory, "", menu[selectedCategory])
 }
 
 type selectionResolution struct {
@@ -691,6 +648,13 @@ func (b *BotService) getCurrentSortedProducts(ctx context.Context, session *core
 	products := menu[session.CurrentCategory]
 	if len(products) == 0 {
 		return nil, false, fmt.Errorf("no products in category")
+	}
+
+	if strings.TrimSpace(session.CurrentSubcategory) != "" {
+		products = filterProductsBySubcategory(session.CurrentCategory, products, session.CurrentSubcategory)
+		if len(products) == 0 {
+			return nil, false, fmt.Errorf("no products in subcategory")
+		}
 	}
 
 	return sortProductsAlphabetically(products), false, nil

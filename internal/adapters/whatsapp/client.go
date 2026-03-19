@@ -18,15 +18,23 @@ type Client struct {
 	phoneNumberID string
 	token         string
 	httpClient    *http.Client
+	enabled       bool
+	disabledError string
 }
 
 // NewClient creates a new WhatsApp client
 func NewClient(phoneNumberID, token string) *Client {
-	if phoneNumberID == "" {
-		panic("WHATSAPP_PHONE_NUMBER_ID is required but not set")
-	}
-	if token == "" {
-		panic("WHATSAPP_TOKEN is required but not set")
+	if phoneNumberID == "" || token == "" {
+		return &Client{
+			baseURL:       "https://graph.facebook.com/v19.0",
+			phoneNumberID: phoneNumberID,
+			token:         token,
+			httpClient: &http.Client{
+				Timeout: 30 * time.Second,
+			},
+			enabled:       false,
+			disabledError: "whatsapp client disabled: WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_TOKEN must both be set",
+		}
 	}
 
 	return &Client{
@@ -36,11 +44,29 @@ func NewClient(phoneNumberID, token string) *Client {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		enabled: true,
 	}
+}
+
+func (c *Client) sendDisabledError() error {
+	if c == nil {
+		return fmt.Errorf("whatsapp client is nil")
+	}
+	if c.enabled {
+		return nil
+	}
+	if c.disabledError != "" {
+		return fmt.Errorf(c.disabledError)
+	}
+	return fmt.Errorf("whatsapp client disabled")
 }
 
 // SendMessage sends a generic message payload to WhatsApp
 func (c *Client) SendMessage(ctx context.Context, to string, payload interface{}) error {
+	if err := c.sendDisabledError(); err != nil {
+		return err
+	}
+
 	url := fmt.Sprintf("%s/%s/messages", c.baseURL, c.phoneNumberID)
 
 	jsonData, err := json.Marshal(payload)

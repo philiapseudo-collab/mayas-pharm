@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
@@ -93,6 +94,12 @@ func Load() (*Config, error) {
 	cfg := &Config{}
 	if err := envconfig.Process("", cfg); err != nil {
 		return nil, fmt.Errorf("error processing environment variables: %w", err)
+	}
+
+	if _, exists := os.LookupEnv("APP_PORT"); !exists {
+		if port := strings.TrimSpace(os.Getenv("PORT")); port != "" {
+			cfg.AppPort = port
+		}
 	}
 
 	// Check for Railway's DATABASE_URL if DB_URL is not set

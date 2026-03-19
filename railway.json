@@ -2,9 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "go build -o server ./cmd/server"
+    "buildCommand": "go build -o server ./cmd/server && go build -o migrate ./cmd/run_migration"
   },
   "deploy": {
+    "preDeployCommand": "./migrate ./migrations/001_init.sql",
     "startCommand": "./server",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10

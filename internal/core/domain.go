@@ -16,71 +16,71 @@ type Category struct {
 
 // Product represents a pharmacy item in the catalog.
 type Product struct {
-	ID                   string  `json:"id"`
-	CategoryID           string  `json:"category_id"`
-	Name                 string  `json:"name"`
-	Description          string  `json:"description"`
-	Price                float64 `json:"price"`
-	Category             string  `json:"category"`
-	StockQuantity        int     `json:"stock_quantity"`
-	ImageURL             string  `json:"image_url"`
-	IsActive             bool    `json:"is_active"`
-	SKU                  string  `json:"sku"`
-	BrandName            string  `json:"brand_name"`
-	GenericName          string  `json:"generic_name"`
-	Strength             string  `json:"strength"`
-	DosageForm           string  `json:"dosage_form"`
-	PackSize             string  `json:"pack_size"`
-	Unit                 string  `json:"unit"`
-	ActiveIngredient     string  `json:"active_ingredient"`
-	RequiresPrescription bool    `json:"requires_prescription"`
-	IsControlled         bool    `json:"is_controlled"`
-	PriceSource          string  `json:"price_source"`
+	ID                   string    `json:"id"`
+	CategoryID           string    `json:"category_id"`
+	Name                 string    `json:"name"`
+	Description          string    `json:"description"`
+	Price                float64   `json:"price"`
+	Category             string    `json:"category"`
+	StockQuantity        int       `json:"stock_quantity"`
+	ImageURL             string    `json:"image_url"`
+	IsActive             bool      `json:"is_active"`
+	SKU                  string    `json:"sku"`
+	BrandName            string    `json:"brand_name"`
+	GenericName          string    `json:"generic_name"`
+	Strength             string    `json:"strength"`
+	DosageForm           string    `json:"dosage_form"`
+	PackSize             string    `json:"pack_size"`
+	Unit                 string    `json:"unit"`
+	ActiveIngredient     string    `json:"active_ingredient"`
+	RequiresPrescription bool      `json:"requires_prescription"`
+	IsControlled         bool      `json:"is_controlled"`
+	PriceSource          string    `json:"price_source"`
 	CreatedAt            time.Time `json:"created_at,omitempty"`
 	UpdatedAt            time.Time `json:"updated_at,omitempty"`
 }
 
 // Order represents a customer order.
 type Order struct {
-	ID                 string      `json:"id"`
-	UserID             string      `json:"user_id"`
-	CustomerPhone      string      `json:"customer_phone"`
-	TableNumber        string      `json:"table_number"`
-	TotalAmount        float64     `json:"total_amount"`
-	Status             OrderStatus `json:"status"`
-	PaymentMethod      string      `json:"payment_method"`
-	PaymentRef         string      `json:"payment_reference"`
-	PickupCode         string      `json:"pickup_code"`
-	FulfillmentType    string      `json:"fulfillment_type"`
-	DeliveryZoneID     string      `json:"delivery_zone_id,omitempty"`
-	DeliveryZoneName   string      `json:"delivery_zone_name,omitempty"`
-	DeliveryFee        float64     `json:"delivery_fee"`
-	DeliveryAddress    string      `json:"delivery_address,omitempty"`
-	DeliveryContactName string     `json:"delivery_contact_name,omitempty"`
-	DeliveryNotes      string      `json:"delivery_notes,omitempty"`
-	ReviewRequired     bool        `json:"review_required"`
-	ReviewNotes        string      `json:"review_notes,omitempty"`
-	ReviewedAt         *time.Time  `json:"reviewed_at,omitempty"`
-	ReviewedByUserID   string      `json:"reviewed_by_user_id,omitempty"`
-	PrescriptionCount  int         `json:"prescription_count"`
-	PaidAt             *time.Time  `json:"paid_at,omitempty"`
-	PreparingAt        *time.Time  `json:"preparing_at,omitempty"`
-	PreparingByUserID  string      `json:"preparing_by_user_id,omitempty"`
-	PreparingByName    string      `json:"preparing_by_name,omitempty"`
-	PreparingByCode    string      `json:"preparing_by_code,omitempty"`
-	ReadyAt            *time.Time  `json:"ready_at,omitempty"`
-	ReadyByUserID      string      `json:"ready_by_user_id,omitempty"`
-	ReadyByName        string      `json:"ready_by_name,omitempty"`
-	ReadyByCode        string      `json:"ready_by_code,omitempty"`
-	CompletedAt        *time.Time  `json:"completed_at,omitempty"`
-	CompletedByUserID  string      `json:"completed_by_user_id,omitempty"`
-	CompletedByName    string      `json:"completed_by_name,omitempty"`
-	CompletedByCode    string      `json:"completed_by_code,omitempty"`
-	ExpiresAt          *time.Time  `json:"expires_at,omitempty"`
-	Items              []OrderItem `json:"items"`
-	Prescriptions      []Prescription `json:"prescriptions,omitempty"`
-	CreatedAt          time.Time   `json:"created_at"`
-	UpdatedAt          time.Time   `json:"updated_at"`
+	ID                  string         `json:"id"`
+	UserID              string         `json:"user_id"`
+	CustomerPhone       string         `json:"customer_phone"`
+	TableNumber         string         `json:"table_number"`
+	TotalAmount         float64        `json:"total_amount"`
+	Status              OrderStatus    `json:"status"`
+	PaymentMethod       string         `json:"payment_method"`
+	PaymentRef          string         `json:"payment_reference"`
+	PickupCode          string         `json:"pickup_code"`
+	FulfillmentType     string         `json:"fulfillment_type"`
+	DeliveryZoneID      string         `json:"delivery_zone_id,omitempty"`
+	DeliveryZoneName    string         `json:"delivery_zone_name,omitempty"`
+	DeliveryFee         float64        `json:"delivery_fee"`
+	DeliveryAddress     string         `json:"delivery_address,omitempty"`
+	DeliveryContactName string         `json:"delivery_contact_name,omitempty"`
+	DeliveryNotes       string         `json:"delivery_notes,omitempty"`
+	ReviewRequired      bool           `json:"review_required"`
+	ReviewNotes         string         `json:"review_notes,omitempty"`
+	ReviewedAt          *time.Time     `json:"reviewed_at,omitempty"`
+	ReviewedByUserID    string         `json:"reviewed_by_user_id,omitempty"`
+	PrescriptionCount   int            `json:"prescription_count"`
+	PaidAt              *time.Time     `json:"paid_at,omitempty"`
+	PreparingAt         *time.Time     `json:"preparing_at,omitempty"`
+	PreparingByUserID   string         `json:"preparing_by_user_id,omitempty"`
+	PreparingByName     string         `json:"preparing_by_name,omitempty"`
+	PreparingByCode     string         `json:"preparing_by_code,omitempty"`
+	ReadyAt             *time.Time     `json:"ready_at,omitempty"`
+	ReadyByUserID       string         `json:"ready_by_user_id,omitempty"`
+	ReadyByName         string         `json:"ready_by_name,omitempty"`
+	ReadyByCode         string         `json:"ready_by_code,omitempty"`
+	CompletedAt         *time.Time     `json:"completed_at,omitempty"`
+	CompletedByUserID   string         `json:"completed_by_user_id,omitempty"`
+	CompletedByName     string         `json:"completed_by_name,omitempty"`
+	CompletedByCode     string         `json:"completed_by_code,omitempty"`
+	ExpiresAt           *time.Time     `json:"expires_at,omitempty"`
+	Items               []OrderItem    `json:"items"`
+	Prescriptions       []Prescription `json:"prescriptions,omitempty"`
+	CreatedAt           time.Time      `json:"created_at"`
+	UpdatedAt           time.Time      `json:"updated_at"`
 }
 
 // OrderItem represents a single item in an order.
@@ -98,17 +98,17 @@ type OrderItem struct {
 type OrderStatus string
 
 const (
-	OrderStatusPendingReview          OrderStatus = "PENDING_REVIEW"
+	OrderStatusPendingReview           OrderStatus = "PENDING_REVIEW"
 	OrderStatusApprovedAwaitingPayment OrderStatus = "APPROVED_AWAITING_PAYMENT"
-	OrderStatusPaid                   OrderStatus = "PAID"
-	OrderStatusPacking                OrderStatus = "PACKING"
-	OrderStatusReady                  OrderStatus = "READY"
-	OrderStatusOutForDelivery         OrderStatus = "OUT_FOR_DELIVERY"
-	OrderStatusCompleted              OrderStatus = "COMPLETED"
-	OrderStatusRejected               OrderStatus = "REJECTED"
-	OrderStatusFailed                 OrderStatus = "FAILED"
-	OrderStatusCancelled              OrderStatus = "CANCELLED"
-	OrderStatusExpired                OrderStatus = "EXPIRED"
+	OrderStatusPaid                    OrderStatus = "PAID"
+	OrderStatusPacking                 OrderStatus = "PACKING"
+	OrderStatusReady                   OrderStatus = "READY"
+	OrderStatusOutForDelivery          OrderStatus = "OUT_FOR_DELIVERY"
+	OrderStatusCompleted               OrderStatus = "COMPLETED"
+	OrderStatusRejected                OrderStatus = "REJECTED"
+	OrderStatusFailed                  OrderStatus = "FAILED"
+	OrderStatusCancelled               OrderStatus = "CANCELLED"
+	OrderStatusExpired                 OrderStatus = "EXPIRED"
 )
 
 // Compatibility aliases retained while the old queue/order code is being reused.
@@ -145,27 +145,29 @@ type User struct {
 
 // Session represents a user's current state in Redis.
 type Session struct {
-	State                     string                   `json:"state"`
-	CurrentCategory           string                   `json:"current_category"`
-	CurrentProductID          string                   `json:"current_product_id"`
-	Cart                      []CartItem               `json:"cart"`
-	PendingOrderID            string                   `json:"pending_order_id"`
-	PendingRetryOrderID       string                   `json:"pending_retry_order_id,omitempty"`
-	PendingResolvedItems      []CartItem               `json:"pending_resolved_items,omitempty"`
-	PendingRawSelections      []string                 `json:"pending_raw_selections,omitempty"`
-	PendingSelectionErrors    []string                 `json:"pending_selection_errors,omitempty"`
-	PendingAmbiguousInput     string                   `json:"pending_ambiguous_input,omitempty"`
-	PendingAmbiguousQty       int                      `json:"pending_ambiguous_qty,omitempty"`
-	PendingAmbiguousOptions   []PendingAmbiguousOption `json:"pending_ambiguous_options,omitempty"`
-	FulfillmentType           string                   `json:"fulfillment_type,omitempty"`
-	DeliveryZoneID            string                   `json:"delivery_zone_id,omitempty"`
-	DeliveryZoneName          string                   `json:"delivery_zone_name,omitempty"`
-	DeliveryFee               float64                  `json:"delivery_fee,omitempty"`
-	DeliveryAddress           string                   `json:"delivery_address,omitempty"`
-	DeliveryContactName       string                   `json:"delivery_contact_name,omitempty"`
-	DeliveryNotes             string                   `json:"delivery_notes,omitempty"`
-	RequiresPrescription      bool                     `json:"requires_prescription,omitempty"`
-	PendingPrescriptionOrderID string                  `json:"pending_prescription_order_id,omitempty"`
+	State                      string                   `json:"state"`
+	CurrentCategory            string                   `json:"current_category"`
+	CurrentCategoryPage        int                      `json:"current_category_page,omitempty"`
+	CurrentSubcategory         string                   `json:"current_subcategory,omitempty"`
+	CurrentProductID           string                   `json:"current_product_id"`
+	Cart                       []CartItem               `json:"cart"`
+	PendingOrderID             string                   `json:"pending_order_id"`
+	PendingRetryOrderID        string                   `json:"pending_retry_order_id,omitempty"`
+	PendingResolvedItems       []CartItem               `json:"pending_resolved_items,omitempty"`
+	PendingRawSelections       []string                 `json:"pending_raw_selections,omitempty"`
+	PendingSelectionErrors     []string                 `json:"pending_selection_errors,omitempty"`
+	PendingAmbiguousInput      string                   `json:"pending_ambiguous_input,omitempty"`
+	PendingAmbiguousQty        int                      `json:"pending_ambiguous_qty,omitempty"`
+	PendingAmbiguousOptions    []PendingAmbiguousOption `json:"pending_ambiguous_options,omitempty"`
+	FulfillmentType            string                   `json:"fulfillment_type,omitempty"`
+	DeliveryZoneID             string                   `json:"delivery_zone_id,omitempty"`
+	DeliveryZoneName           string                   `json:"delivery_zone_name,omitempty"`
+	DeliveryFee                float64                  `json:"delivery_fee,omitempty"`
+	DeliveryAddress            string                   `json:"delivery_address,omitempty"`
+	DeliveryContactName        string                   `json:"delivery_contact_name,omitempty"`
+	DeliveryNotes              string                   `json:"delivery_notes,omitempty"`
+	RequiresPrescription       bool                     `json:"requires_prescription,omitempty"`
+	PendingPrescriptionOrderID string                   `json:"pending_prescription_order_id,omitempty"`
 }
 
 // CartItem represents an item in the user's shopping cart.
@@ -357,19 +359,19 @@ type UnmatchedPayment struct {
 
 // Prescription captures a prescription media submission linked to an order.
 type Prescription struct {
-	ID             string     `json:"id"`
-	OrderID        string     `json:"order_id"`
-	CustomerPhone  string     `json:"customer_phone"`
-	MediaID        string     `json:"media_id"`
-	MediaType      string     `json:"media_type"`
-	FileName       string     `json:"file_name,omitempty"`
-	Caption        string     `json:"caption,omitempty"`
-	Status         string     `json:"status"`
-	ReviewNotes    string     `json:"review_notes,omitempty"`
-	ReviewedByUserID string   `json:"reviewed_by_user_id,omitempty"`
-	ReviewedAt     *time.Time `json:"reviewed_at,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	ID               string     `json:"id"`
+	OrderID          string     `json:"order_id"`
+	CustomerPhone    string     `json:"customer_phone"`
+	MediaID          string     `json:"media_id"`
+	MediaType        string     `json:"media_type"`
+	FileName         string     `json:"file_name,omitempty"`
+	Caption          string     `json:"caption,omitempty"`
+	Status           string     `json:"status"`
+	ReviewNotes      string     `json:"review_notes,omitempty"`
+	ReviewedByUserID string     `json:"reviewed_by_user_id,omitempty"`
+	ReviewedAt       *time.Time `json:"reviewed_at,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 }
 
 const (
@@ -380,26 +382,26 @@ const (
 
 // PrescriptionReview records pharmacist review actions.
 type PrescriptionReview struct {
-	ID              string    `json:"id"`
-	PrescriptionID  string    `json:"prescription_id"`
-	OrderID         string    `json:"order_id"`
-	ReviewerUserID  string    `json:"reviewer_user_id"`
-	Decision        string    `json:"decision"`
-	Notes           string    `json:"notes"`
-	CreatedAt       time.Time `json:"created_at"`
+	ID             string    `json:"id"`
+	PrescriptionID string    `json:"prescription_id"`
+	OrderID        string    `json:"order_id"`
+	ReviewerUserID string    `json:"reviewer_user_id"`
+	Decision       string    `json:"decision"`
+	Notes          string    `json:"notes"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 // DeliveryZone stores flat-fee delivery rules for Nairobi zones.
 type DeliveryZone struct {
-	ID             string    `json:"id"`
-	Name           string    `json:"name"`
-	Slug           string    `json:"slug"`
-	Fee            float64   `json:"fee"`
-	EstimatedMins  int       `json:"estimated_mins"`
-	IsActive       bool      `json:"is_active"`
-	SortOrder      int       `json:"sort_order"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID            string    `json:"id"`
+	Name          string    `json:"name"`
+	Slug          string    `json:"slug"`
+	Fee           float64   `json:"fee"`
+	EstimatedMins int       `json:"estimated_mins"`
+	IsActive      bool      `json:"is_active"`
+	SortOrder     int       `json:"sort_order"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // BusinessHours stores the operating window used for queue and expectation messaging.
@@ -415,15 +417,15 @@ type BusinessHours struct {
 
 // OutboundMessage records durable WhatsApp notifications and retries.
 type OutboundMessage struct {
-	ID            string     `json:"id"`
-	PhoneNumber   string     `json:"phone_number"`
-	MessageType   string     `json:"message_type"`
-	Payload       string     `json:"payload"`
-	Status        string     `json:"status"`
-	LastError     string     `json:"last_error,omitempty"`
-	SentAt        *time.Time `json:"sent_at,omitempty"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
+	ID          string     `json:"id"`
+	PhoneNumber string     `json:"phone_number"`
+	MessageType string     `json:"message_type"`
+	Payload     string     `json:"payload"`
+	Status      string     `json:"status"`
+	LastError   string     `json:"last_error,omitempty"`
+	SentAt      *time.Time `json:"sent_at,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // AuditLog records meaningful staff/system actions for traceability.

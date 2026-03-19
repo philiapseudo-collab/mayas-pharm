@@ -232,6 +232,170 @@ func TestHandleIncomingMessage_BrowsingCategoryStillShowsProducts(t *testing.T) 
 	}
 }
 
+func TestHandleIncomingMessage_WelcomeMenuPaginatesCategories(t *testing.T) {
+	repo := &botTestProductRepo{menu: pagedPharmacyMenu()}
+	sessionRepo := newBotTestSessionRepo()
+	whatsApp := &botTestWhatsApp{}
+	service := NewBotService(repo, sessionRepo, whatsApp, botTestPaymentGateway{}, botTestOrderRepo{}, botTestUserRepo{})
+
+	if err := service.HandleIncomingMessage("254700001001", "hello", "text"); err != nil {
+		t.Fatalf("HandleIncomingMessage() error = %v", err)
+	}
+
+	if len(whatsApp.categoryPrompts) != 1 {
+		t.Fatalf("SendCategoryListWithText() calls = %d, want 1", len(whatsApp.categoryPrompts))
+	}
+	if got := whatsApp.categoryPrompts[0]; !strings.Contains(got, "Page 1 of 2.") {
+		t.Fatalf("welcome prompt = %q, want page indicator", got)
+	}
+	if len(whatsApp.categoryLists) != 1 {
+		t.Fatalf("category lists = %d, want 1", len(whatsApp.categoryLists))
+	}
+	if got := len(whatsApp.categoryLists[0]); got != 9 {
+		t.Fatalf("page 1 option count = %d, want 9", got)
+	}
+	if last := whatsApp.categoryLists[0][len(whatsApp.categoryLists[0])-1]; last != controlMoreCategories {
+		t.Fatalf("last option = %q, want %q", last, controlMoreCategories)
+	}
+
+	session, err := sessionRepo.Get(context.Background(), "254700001001")
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if session.CurrentCategoryPage != 0 {
+		t.Fatalf("current category page = %d, want 0", session.CurrentCategoryPage)
+	}
+}
+
+func TestHandleIncomingMessage_BrowsingMoreCategoriesShowsNextPage(t *testing.T) {
+	repo := &botTestProductRepo{menu: pagedPharmacyMenu()}
+	sessionRepo := newBotTestSessionRepo()
+	sessionRepo.sessions["254700001002"] = &core.Session{State: StateBrowsing}
+	whatsApp := &botTestWhatsApp{}
+	service := NewBotService(repo, sessionRepo, whatsApp, botTestPaymentGateway{}, botTestOrderRepo{}, botTestUserRepo{})
+
+	if err := service.HandleIncomingMessage("254700001002", controlMoreCategories, "interactive"); err != nil {
+		t.Fatalf("HandleIncomingMessage() error = %v", err)
+	}
+
+	if len(whatsApp.categoryPrompts) != 1 {
+		t.Fatalf("SendCategoryListWithText() calls = %d, want 1", len(whatsApp.categoryPrompts))
+	}
+	if got := whatsApp.categoryPrompts[0]; !strings.Contains(got, "Page 2 of 2.") {
+		t.Fatalf("prompt = %q, want page 2 indicator", got)
+	}
+	if len(whatsApp.categoryLists) != 1 {
+		t.Fatalf("category lists = %d, want 1", len(whatsApp.categoryLists))
+	}
+	if !containsString(whatsApp.categoryLists[0], controlPreviousCategories) {
+		t.Fatalf("page 2 options = %#v, want previous-page control", whatsApp.categoryLists[0])
+	}
+	if containsString(whatsApp.categoryLists[0], controlMoreCategories) {
+		t.Fatalf("page 2 options = %#v, did not expect next-page control", whatsApp.categoryLists[0])
+	}
+
+	session, err := sessionRepo.Get(context.Background(), "254700001002")
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if session.CurrentCategoryPage != 1 {
+		t.Fatalf("current category page = %d, want 1", session.CurrentCategoryPage)
+	}
+}
+
+func TestHandleIncomingMessage_CategoryShowsSubcategoryList(t *testing.T) {
+	repo := &botTestProductRepo{
+		menu: map[string][]*core.Product{
+			"Pain & Fever": {
+				{ID: "p1", Name: "Cetamol", Price: 70, Category: "Pain & Fever", DosageForm: "Tablet"},
+				{ID: "p2", Name: "Paracetamol Syrup", Price: 180, Category: "Pain & Fever", DosageForm: "Syrup"},
+				{ID: "p3", Name: "Voltaren Emulgel", Price: 980, Category: "Pain & Fever", DosageForm: "Gel"},
+			},
+		},
+	}
+	sessionRepo := newBotTestSessionRepo()
+	sessionRepo.sessions["254700001003"] = &core.Session{State: StateBrowsing}
+	whatsApp := &botTestWhatsApp{}
+	service := NewBotService(repo, sessionRepo, whatsApp, botTestPaymentGateway{}, botTestOrderRepo{}, botTestUserRepo{})
+
+	if err := service.HandleIncomingMessage("254700001003", "Pain & Fever", "interactive"); err != nil {
+		t.Fatalf("HandleIncomingMessage() error = %v", err)
+	}
+
+	if len(whatsApp.texts) != 0 {
+		t.Fatalf("SendText() calls = %d, want 0", len(whatsApp.texts))
+	}
+	if len(whatsApp.categoryPrompts) != 1 {
+		t.Fatalf("SendCategoryListWithText() calls = %d, want 1", len(whatsApp.categoryPrompts))
+	}
+	if got := whatsApp.categoryPrompts[0]; got != "Choose a section in *Pain & Fever*:" {
+		t.Fatalf("subcategory prompt = %q, want category section prompt", got)
+	}
+	wantOptions := []string{controlAllProducts, "Tablets & Capsules", "Liquids & Syrups", "Topicals", controlBackToCategories}
+	if got := whatsApp.categoryLists[0]; strings.Join(got, "|") != strings.Join(wantOptions, "|") {
+		t.Fatalf("subcategory options = %#v, want %#v", got, wantOptions)
+	}
+
+	session, err := sessionRepo.Get(context.Background(), "254700001003")
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if session.State != StateBrowsingSubcategory {
+		t.Fatalf("session state = %s, want %s", session.State, StateBrowsingSubcategory)
+	}
+	if session.CurrentCategory != "Pain & Fever" {
+		t.Fatalf("current category = %q, want %q", session.CurrentCategory, "Pain & Fever")
+	}
+}
+
+func TestHandleIncomingMessage_SubcategorySelectionFiltersProducts(t *testing.T) {
+	repo := &botTestProductRepo{
+		menu: map[string][]*core.Product{
+			"Pain & Fever": {
+				{ID: "p1", Name: "Cetamol", Price: 70, Category: "Pain & Fever", DosageForm: "Tablet"},
+				{ID: "p2", Name: "Paracetamol Syrup", Price: 180, Category: "Pain & Fever", DosageForm: "Syrup"},
+				{ID: "p3", Name: "Voltaren Emulgel", Price: 980, Category: "Pain & Fever", DosageForm: "Gel"},
+			},
+		},
+	}
+	sessionRepo := newBotTestSessionRepo()
+	sessionRepo.sessions["254700001004"] = &core.Session{
+		State:               StateBrowsingSubcategory,
+		CurrentCategory:     "Pain & Fever",
+		CurrentCategoryPage: 0,
+	}
+	whatsApp := &botTestWhatsApp{}
+	service := NewBotService(repo, sessionRepo, whatsApp, botTestPaymentGateway{}, botTestOrderRepo{}, botTestUserRepo{})
+
+	if err := service.HandleIncomingMessage("254700001004", "Topicals", "interactive"); err != nil {
+		t.Fatalf("HandleIncomingMessage() error = %v", err)
+	}
+
+	if len(whatsApp.texts) != 1 {
+		t.Fatalf("SendText() calls = %d, want 1", len(whatsApp.texts))
+	}
+	if !strings.Contains(whatsApp.texts[0], "Products in *Pain & Fever* - *Topicals*:") {
+		t.Fatalf("product list = %q, want subcategory heading", whatsApp.texts[0])
+	}
+	if !strings.Contains(whatsApp.texts[0], "Voltaren Emulgel - KES 980") {
+		t.Fatalf("product list = %q, want topical product", whatsApp.texts[0])
+	}
+	if strings.Contains(whatsApp.texts[0], "Cetamol - KES 70") || strings.Contains(whatsApp.texts[0], "Paracetamol Syrup - KES 180") {
+		t.Fatalf("product list = %q, expected only topical products", whatsApp.texts[0])
+	}
+
+	session, err := sessionRepo.Get(context.Background(), "254700001004")
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if session.State != StateSelectingProduct {
+		t.Fatalf("session state = %s, want %s", session.State, StateSelectingProduct)
+	}
+	if session.CurrentSubcategory != "Topicals" {
+		t.Fatalf("current subcategory = %q, want %q", session.CurrentSubcategory, "Topicals")
+	}
+}
+
 func TestHandleIncomingMessage_InteractiveCategorySwitchWhileSelectingProduct(t *testing.T) {
 	repo := &botTestProductRepo{
 		menu: map[string][]*core.Product{
@@ -832,6 +996,33 @@ func cloneBotTestSession(session *core.Session) *core.Session {
 	clone.PendingSelectionErrors = append([]string(nil), session.PendingSelectionErrors...)
 	clone.PendingAmbiguousOptions = append([]core.PendingAmbiguousOption(nil), session.PendingAmbiguousOptions...)
 	return &clone
+}
+
+func pagedPharmacyMenu() map[string][]*core.Product {
+	return map[string][]*core.Product{
+		"Pain & Fever":           {},
+		"Antibiotics":            {},
+		"Allergy":                {},
+		"Cough & Cold":           {},
+		"Gastro Care":            {},
+		"Vitamins & Supplements": {},
+		"Dermatology":            {},
+		"First Aid":              {},
+		"Women's Health":         {},
+		"Baby Care":              {},
+		"Chronic Care":           {},
+		"Eye & Ear":              {},
+		"Oral Care":              {},
+	}
+}
+
+func containsString(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
 }
 
 type botTestWhatsApp struct {

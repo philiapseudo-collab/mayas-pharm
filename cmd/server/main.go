@@ -71,7 +71,11 @@ func main() {
 
 	sessionRepo := redis.NewRepository(redisClient)
 	whatsappClient := whatsapp.NewClient(cfg.WhatsAppPhoneNumberID, cfg.WhatsAppToken)
-	log.Println("whatsapp client initialized")
+	if strings.TrimSpace(cfg.WhatsAppPhoneNumberID) == "" || strings.TrimSpace(cfg.WhatsAppToken) == "" {
+		log.Println("whatsapp client disabled: set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_TOKEN to enable outbound messaging")
+	} else {
+		log.Println("whatsapp client initialized")
+	}
 
 	paymentGateway, err := payment.NewClient()
 	if err != nil {
